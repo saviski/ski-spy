@@ -1,0 +1,59 @@
+{
+  "name": "@ski/observables",
+  "version": "0.1.0",
+  "description": "Watch changes to object properties, using Proxy and __proto__ modifications",
+  "main": "observables.min.js",
+  "module": "observables.js",
+  "types": "src/index.ts",
+  "scripts": {
+    "build": "run-s clean build:*",
+    "watch": "run-p \"build:* -- --watch\"",
+    "clean": "rimraf js .types",
+    "build:bundle": "rollup -c",
+    "build:typescript": "ttsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/saviski/ski-observables.git"
+  },
+  "keywords": [
+    "typescrip",
+    "javascript",
+    "observables",
+    "proxy",
+    "watch"
+  ],
+  "author": "saviski",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/saviski/ski-observables/issues"
+  },
+  "homepage": "https://github.com/saviski/ski-observables#readme",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.26.4",
+    "rollup-plugin-terser": "^7.0.0",
+    "rollup-plugin-typescript2": "^0.27.2",
+    "tslib": "^2.0.1",
+    "typescript": "^4.0.2"
+  },
+  "files": [
+    ".types",
+    "js",
+    "src",
+    "observables.js",
+    "observables.min.js",
+    "observables.min.js.map"
+  ],
+  "prettier": {
+    "printWidth": 90,
+    "semi": false,
+    "tabWidth": 2,
+    "proseWrap": "never",
+    "arrowParens": "avoid",
+    "endOfLine": "auto",
+    "singleQuote": true
+  }
+}
