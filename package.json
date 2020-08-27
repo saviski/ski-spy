@@ -1,34 +1,36 @@
 {
-  "name": "@ski/observables",
+  "name": "@ski/spy",
   "version": "0.1.0",
   "description": "Watch changes to object properties, using Proxy and __proto__ modifications",
-  "main": "observables.min.js",
-  "module": "observables.js",
+  "type": "module",
+  "main": "spy.js",
+  "module": "spy.js",
   "types": "src/index.ts",
   "scripts": {
     "build": "run-s clean build:*",
     "watch": "run-p \"build:* -- --watch\"",
     "clean": "rimraf js .types",
-    "build:bundle": "rollup -c",
-    "build:typescript": "ttsc"
+    "build:bundle": "rollup -c"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/saviski/ski-observables.git"
+    "url": "git+https://github.com/saviski/ski-spy.git"
   },
   "keywords": [
     "typescrip",
     "javascript",
     "observables",
+    "spy",
     "proxy",
     "watch"
   ],
   "author": "saviski",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/saviski/ski-observables/issues"
+    "url": "https://github.com/saviski/ski-spy/issues"
   },
-  "homepage": "https://github.com/saviski/ski-observables#readme",
+  "homepage": "https://github.com/saviski/ski-spy#readme",
+  "dependencies": {},
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^9.0.0",
     "npm-run-all": "^4.1.5",
@@ -43,9 +45,9 @@
     ".types",
     "js",
     "src",
-    "observables.js",
-    "observables.min.js",
-    "observables.min.js.map"
+    "spy.js",
+    "spy.min.js",
+    "spy.min.js.map"
   ],
   "prettier": {
     "printWidth": 90,

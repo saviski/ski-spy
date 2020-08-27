@@ -15,7 +15,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "preserveSymlinks": true,
+    "preserveSymlinks": false,
     "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true
   },

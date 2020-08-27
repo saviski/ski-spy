@@ -1,8 +1,8 @@
 /.vscode
 /node_modules
 /pnpm-lock.yaml
-/observables.js
-/observables.min.js
-/observables.min.js.map
+/spy.js
+/spy.min.js
+/spy.min.js.map
 /.types
 /js
