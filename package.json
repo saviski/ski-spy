@@ -1,11 +1,11 @@
 {
   "name": "@ski/spy",
   "version": "0.1.0",
-  "description": "Watch changes to object properties, using Proxy and __proto__ modifications",
+  "description": "Watch changes to existing objects properties, using Proxy and __proto__ modifications",
   "type": "module",
   "main": "spy.js",
   "module": "spy.js",
-  "types": "src/index.ts",
+  "types": "spy.d.ts",
   "scripts": {
     "build": "run-s clean build:*",
     "watch": "run-p \"build:* -- --watch\"",
@@ -30,16 +30,18 @@
     "url": "https://github.com/saviski/ski-spy/issues"
   },
   "homepage": "https://github.com/saviski/ski-spy#readme",
-  "dependencies": {},
+  "dependencies": {
+    "@ski/streams": "workspace:^0.1.0"
+  },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^9.0.0",
     "npm-run-all": "^4.1.5",
     "rimraf": "^3.0.2",
-    "rollup": "^2.26.4",
-    "rollup-plugin-terser": "^7.0.0",
-    "rollup-plugin-typescript2": "^0.27.2",
-    "tslib": "^2.0.1",
-    "typescript": "^4.0.2"
+    "rollup": "^2.52.1",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-typescript2": "^0.27.3",
+    "tslib": "^2.3.0",
+    "typescript": "^4.3.4"
   },
   "files": [
     ".types",
@@ -50,7 +52,7 @@
     "spy.min.js.map"
   ],
   "prettier": {
-    "printWidth": 90,
+    "printWidth": 120,
     "semi": false,
     "tabWidth": 2,
     "proseWrap": "never",

@@ -9,6 +9,9 @@ export default [
     },
     plugins: [
       typescript()
+    ],
+    external: [
+      "@ski/streams/streams.js",
     ]
   }
 ]

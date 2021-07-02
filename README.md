@@ -1,12 +1,12 @@
 Simple observer that allow watching for property value changes of existing objects
 
 ```javascript
-import { watch } from '@ski/spy'
+import { spy } from '@ski/spy'
 
 let originalObject = { a: 1, b: 2 }
 
-let observable = watch(originalObject)
-logChanges(observable)
+let events = spy(originalObject)
+logChanges(events)
 
 originalObject.a = 3
 originalObject.b = 5
