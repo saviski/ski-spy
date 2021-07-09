@@ -1,4 +1,4 @@
-import { trigger, emit, HasAsyngIterator, map, stream } from '@ski/streams/streams.js'
+import { trigger, emit, HasAsyngIterator, map } from '@ski/streams/streams.js'
 import { SpyChange } from './change.js'
 import { spyProperty } from './property.js'
 
