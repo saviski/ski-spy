@@ -5,12 +5,13 @@
   "type": "module",
   "main": "spy.js",
   "module": "spy.js",
-  "types": "spy.d.ts",
+  "types": "spy.ts",
   "scripts": {
     "build": "run-s clean build:*",
     "watch": "run-p \"build:* -- --watch\"",
     "clean": "rimraf js .types",
-    "build:bundle": "rollup -c"
+    "build:bundle": "rollup -c",
+    "tsc": "tsc"
   },
   "repository": {
     "type": "git",

@@ -11,9 +11,8 @@ const spied = new WeakMap<object, AsyncEmitter>()
  * { __proto__: Proxy({ ...object, __proto__: otherObject }) }
  * @returns async generator of [key, value] changes
  */
-export async function* spyObject<T extends object>(object: T): AsyncGenerator<SpyChange<T>, void> {
+export async function* spyObject<T extends object>(object: T): AsyncIterable<SpyChange<T>> {
   //
-  //TODO: use stream share funcionality yelding the same stream to multiple consumers may not work
   if (spied.has(object)) return yield* spied.get(object)!
 
   const stream = new AsyncEmitter<SpyChange<T, any>>()

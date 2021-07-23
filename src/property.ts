@@ -1,53 +1,58 @@
-import { AsyncEmitter } from '@ski/streams/streams.js'
+import { AsyncEmitter, MapOfMap, stream } from '@ski/streams/streams.js'
 import { SpyChange } from './change.js'
-import { ObjectPropertyMap } from './map.js'
 
-const spied = new ObjectPropertyMap()
+const spied = new MapOfMap<object, PropertyKey, AsyncIterable<SpyChange>>()
 
 function findPropertyDescriptor(target: any, prop: PropertyKey): PropertyDescriptor {
-  let desc: PropertyDescriptor | undefined
-  let obj = target
+  let descriptor: PropertyDescriptor | undefined
+  let object = target
   do {
-    desc = Object.getOwnPropertyDescriptor(obj, prop)
-  } while (!desc && (obj = Object.getPrototypeOf(obj)))
+    descriptor = Object.getOwnPropertyDescriptor(object, prop)
+  } while (!descriptor && (object = Object.getPrototypeOf(object)))
 
-  return desc || { value: target[prop], configurable: true, enumerable: true }
+  return descriptor || { value: target[prop], configurable: true, enumerable: true }
 }
 
-export async function* spyProperty<T extends object, K extends keyof T = keyof T>(
+export async function* spyProperty<T extends object, K extends keyof T>(
   target: T | undefined,
   property: K,
   originalDescriptor = findPropertyDescriptor(target, property)
-): AsyncGenerator<SpyChange<T, K>, void> {
-  if (!target) return
+): AsyncIterable<SpyChange<T, K>> {
+  if (!(typeof target == 'object')) return
 
-  if (property in target) yield { target, property, old: undefined, value: target[property] }
+  if (property in target) {
+    console.log('yielding', property, target[property])
+    yield { target, property, old: undefined, value: target[property], initial: true } as any
+  }
 
-  yield* spied.get(target, property, async function* () {
-    //
+  yield* spied.get(target, property, () => stream(watch()))
+
+  async function* watch() {
     const stream = new AsyncEmitter<SpyChange<T, K>>()
-    const values = new WeakMap<T, T[K]>()
+    const hasGetSetter = !('value' in originalDescriptor)
+    const instanceValues = new WeakMap<T, T[K]>()
 
     Object.defineProperty(target, property, {
       get() {
-        return 'value' in originalDescriptor
-          ? values.has(this)
-            ? values.get(this)
-            : originalDescriptor.value
-          : originalDescriptor.get?.call(this)
+        return hasGetSetter
+          ? originalDescriptor.get?.call(this)
+          : instanceValues.has(this)
+          ? instanceValues.get(this)
+          : originalDescriptor.value
       },
 
       set(value: T[K]) {
         let old = this[property]
-        'value' in originalDescriptor ? values.set(this, value) : originalDescriptor.set?.call(this, value)
-        value !== old && stream.yield({ target: this, property, old, value })
+        hasGetSetter ? originalDescriptor.set!.call(this, value) : instanceValues.set(this, value)
+        if (value !== old) stream.yield({ target: this, property, old, value })
       },
 
       configurable: true,
+      enumerable: true,
     })
 
     yield* stream
 
     Object.defineProperty(target, property, originalDescriptor)
-  })
+  }
 }

@@ -1,4 +1,4 @@
-import { trigger, emit, HasAsyngIterator, map } from '@ski/streams/streams.js'
+import { emit, MapOfMap, AsyncStream, stream } from '@ski/streams/streams.js'
 import { SpyChange } from './change.js'
 import { spyProperty } from './property.js'
 
@@ -10,34 +10,44 @@ export type NestedSpy<S, T = S, E = unknown> = {
   [P in keyof T]-?: (T[P] extends (...args: infer A) => infer R
     ? (...args: A) => NestedSpy<S, R, E>
     : NestedSpy<S, T[P], E>) &
-    HasAsyngIterator<SpyChangeSource<S, T, P>> &
+    AsyncIterable<SpyChangeSource<S, T, P>> &
     E
 }
 
+const skiplist = [Symbol.unscopables, Symbol.toPrimitive]
+
+const spied = new MapOfMap<object, PropertyKey, NestedSpy<any, any, any>>()
+
 function spyNestedProxy<T extends object, S extends object, C extends Function>(
-  changes: AsyncGenerator<SpyChangeSource<S, T, any>>,
+  changes: AsyncStream<SpyChangeSource<S, T, any>>,
   call?: C
 ): NestedSpy<S, T, C> {
-  return <any>new Proxy(new Function(), {
-    get(_target, property, _proxy) {
-      if (property === Symbol.asyncIterator) return changes
+  return new Proxy<any>(new Function(), {
+    get(target, property, _proxy) {
+      if (property in skiplist) return target[property]
+      if (property === Symbol.asyncIterator)
+        return () => (call ? call.call(target, changes) : changes)[Symbol.asyncIterator]()
 
-      let values = trigger(changes, ({ source, value }) =>
-        map(spyProperty(value, property), result => ({ ...result, source }))
-      )
-      return spyNestedProxy(values, call)
+      return spied.get(target, property, () => {
+        const spyProperties = changes.trigger(({ source, value }) =>
+          stream(spyProperty(value, property)).map(result => ({ ...result, source }))
+        )
+        return spyNestedProxy(spyProperties, call)
+      })
     },
 
     apply(_target, self, args) {
-      if (call) {
-        return call.call(self, changes, ...args)
-      }
+      if (call) return call.call(self, changes, ...args)
 
-      let results = map(changes, change => ({
+      let results = changes.map(change => ({
         ...change,
         value: (<Function>change.value).apply(self, args),
       }))
       return spyNestedProxy(results, call)
+    },
+
+    has(_target, _property) {
+      return true
     },
   })
 }
@@ -45,7 +55,7 @@ function spyNestedProxy<T extends object, S extends object, C extends Function>(
 export function spyNested<S extends object>(object: S): NestedSpy<S>
 export function spyNested<S extends object, T>(
   object: S,
-  call?: (changes: AsyncGenerator<SpyChangeSource<S, any, any>>) => T
+  call?: (changes: AsyncIterable<SpyChangeSource<S, any, any>>) => T
 ): NestedSpy<S, S, T>
 export function spyNested(object: any, call?: Function) {
   return spyNestedProxy(

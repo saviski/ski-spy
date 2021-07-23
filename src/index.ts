@@ -7,12 +7,12 @@ export * from './nested.js'
 export * from './change.js'
 
 // spyObject
-export function spy<T extends object>(object: T, all: true): AsyncGenerator<SpyChange<T>, never>
+export function spy<T extends object>(object: T, all: true): AsyncIterable<SpyChange<T>>
 
 // spyNested
 export function spy<T extends object, U>(
   object: T,
-  call?: (changes: AsyncGenerator<SpyChangeSource<T>>) => U
+  call?: (changes: AsyncIterable<SpyChangeSource<T>>) => U
 ): NestedSpy<T, T, U>
 
 export function spy<T extends object>(object: T): NestedSpy<T>
@@ -22,13 +22,13 @@ export function spy<T extends object, K extends keyof T>(
   object: T,
   property: K,
   originalDescriptor?: PropertyDescriptor
-): AsyncGenerator<SpyChange<T, K>, never>
+): AsyncIterable<SpyChange<T, K>>
 
 export function spy<T extends object>(
   object: T,
   property: PropertyKey,
   originalDescriptor?: PropertyDescriptor
-): AsyncGenerator<SpyChange<T>, never>
+): AsyncIterable<SpyChange<T>>
 
 // implementation
 export function spy(object: any, property?: PropertyKey | true | Function, descriptor?: PropertyDescriptor): any {
