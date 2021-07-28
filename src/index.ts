@@ -10,10 +10,10 @@ export * from './change.js'
 export function spy<T extends object>(object: T, all: true): AsyncIterable<SpyChange<T>>
 
 // spyNested
-export function spy<T extends object, U>(
+export function spy<T extends object, A extends any[], R>(
   object: T,
-  call?: (changes: AsyncIterable<SpyChangeSource<T>>) => U
-): NestedSpy<T, T, U>
+  call?: (changes: AsyncIterable<SpyChangeSource<T>>, ...args: A) => R
+): NestedSpy<T, T, (...args: A) => R>
 
 export function spy<T extends object>(object: T): NestedSpy<T>
 

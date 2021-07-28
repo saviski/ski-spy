@@ -14,7 +14,7 @@ export type NestedSpy<S, T = S, E = unknown> = {
     E
 }
 
-const skiplist = [Symbol.unscopables, Symbol.toPrimitive]
+const skiplist = [Symbol.unscopables]
 
 const spied = new MapOfMap<object, PropertyKey, NestedSpy<any, any, any>>()
 

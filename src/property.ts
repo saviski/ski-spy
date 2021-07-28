@@ -13,16 +13,20 @@ function findPropertyDescriptor(target: any, prop: PropertyKey): PropertyDescrip
   return descriptor || { value: target[prop], configurable: true, enumerable: true }
 }
 
+function isInstance(object: unknown) {
+  return typeof object == 'object' && object?.constructor && object instanceof object.constructor
+}
+
 export async function* spyProperty<T extends object, K extends keyof T>(
   target: T | undefined,
   property: K,
   originalDescriptor = findPropertyDescriptor(target, property)
 ): AsyncIterable<SpyChange<T, K>> {
-  if (!(typeof target == 'object')) return
+  if (!target) return
 
-  if (property in target) {
-    console.log('yielding', property, target[property])
-    yield { target, property, old: undefined, value: target[property], initial: true } as any
+  if (isInstance(target) && property in target) {
+    console.log('initial value', property, target[property])
+    yield { target, property, old: undefined, value: target[property] }
   }
 
   yield* spied.get(target, property, () => stream(watch()))
@@ -51,8 +55,8 @@ export async function* spyProperty<T extends object, K extends keyof T>(
       enumerable: true,
     })
 
-    yield* stream
+    stream.finally(() => Object.defineProperty(target, property, originalDescriptor))
 
-    Object.defineProperty(target, property, originalDescriptor)
+    yield* stream
   }
 }
