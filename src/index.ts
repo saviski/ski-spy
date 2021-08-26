@@ -1,7 +1,7 @@
 import { spyObject } from './object.js'
 import { spyProperty } from './property.js'
 import { SpyChange } from './change.js'
-import { spyNested, NestedSpy, SpyChangeSource } from './nested.js'
+import { spyNested, NestedSpy } from './nested.js'
 
 export * from './nested.js'
 export * from './change.js'
@@ -12,7 +12,7 @@ export function spy<T extends object>(object: T, all: true): AsyncIterable<SpyCh
 // spyNested
 export function spy<T extends object, A extends any[], R>(
   object: T,
-  call?: (changes: AsyncIterable<SpyChangeSource<T>>, ...args: A) => R
+  call?: (changes: AsyncIterable<SpyChange<any, any, T>>, ...args: A) => R
 ): NestedSpy<T, T, (...args: A) => R>
 
 export function spy<T extends object>(object: T): NestedSpy<T>

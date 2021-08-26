@@ -1,7 +1,7 @@
-import { AsyncEmitter, MapOfMap, stream } from '@ski/streams/streams.js'
+import { AsyncEmitter, WeakMapOfMaps, stream } from '@ski/streams/streams.js'
 import { SpyChange } from './change.js'
 
-const spied = new MapOfMap<object, PropertyKey, AsyncIterable<SpyChange>>()
+const spied = new WeakMapOfMaps<object, PropertyKey, AsyncIterable<SpyChange>>()
 
 function findPropertyDescriptor(target: any, prop: PropertyKey): PropertyDescriptor {
   let descriptor: PropertyDescriptor | undefined
@@ -13,25 +13,38 @@ function findPropertyDescriptor(target: any, prop: PropertyKey): PropertyDescrip
   return descriptor || { value: target[prop], configurable: true, enumerable: true }
 }
 
-function isInstance(object: unknown) {
+export function isInstance(object: unknown) {
   return typeof object == 'object' && object?.constructor && object instanceof object.constructor
 }
 
-export async function* spyProperty<T extends object, K extends keyof T>(
-  target: T | undefined,
+export function spyProperty<T extends object, K extends keyof T>(
+  target: T,
   property: K,
   originalDescriptor = findPropertyDescriptor(target, property)
 ): AsyncIterable<SpyChange<T, K>> {
-  if (!target) return
+  //
+  return asyncGenerator(spied.get(target, property, watch))
 
-  if (isInstance(target) && property in target) {
-    console.log('initial value', property, target[property])
-    yield { target, property, old: undefined, value: target[property] }
+  async function* asyncGenerator(changes: AsyncEmitter<SpyChange<T, K>>) {
+    if (isInstance(target) && property in target) {
+      console.log('initial yield', {
+        target,
+        property,
+        old: undefined,
+        value: target[property],
+      })
+      yield {
+        target,
+        property,
+        old: undefined,
+        value: target[property],
+      }
+    }
+
+    yield* changes
   }
 
-  yield* spied.get(target, property, () => stream(watch()))
-
-  async function* watch() {
+  function watch() {
     const stream = new AsyncEmitter<SpyChange<T, K>>()
     const hasGetSetter = !('value' in originalDescriptor)
     const instanceValues = new WeakMap<T, T[K]>()
@@ -48,7 +61,13 @@ export async function* spyProperty<T extends object, K extends keyof T>(
       set(value: T[K]) {
         let old = this[property]
         hasGetSetter ? originalDescriptor.set!.call(this, value) : instanceValues.set(this, value)
-        if (value !== old) stream.yield({ target: this, property, old, value })
+        if (value !== old)
+          stream.push({
+            target: this,
+            property,
+            old,
+            value,
+          })
       },
 
       configurable: true,
@@ -57,6 +76,6 @@ export async function* spyProperty<T extends object, K extends keyof T>(
 
     stream.finally(() => Object.defineProperty(target, property, originalDescriptor))
 
-    yield* stream
+    return stream
   }
 }

@@ -12,15 +12,18 @@
     "strict": true,
     "noImplicitAny": false,
     "noImplicitThis": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "preserveSymlinks": false,
     "moduleResolution": "node",
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "experimentalDecorators": true,
+    "esModuleInterop": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "test/**/*.ts"
   ],
   "exclude": [
     "./types/**"

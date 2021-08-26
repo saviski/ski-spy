@@ -1,49 +1,77 @@
-import { emit, MapOfMap, AsyncStream, stream } from '@ski/streams/streams.js'
-import { SpyChange } from './change.js'
-import { spyProperty } from './property.js'
+import { WeakMapOfMaps, AsyncStream, stream, emit } from '@ski/streams/streams.js'
+import { SpyChange, ChangesIterable, ChangeIterator } from './change.js'
+import { spyProperty, isInstance } from './property.js'
 
-export interface SpyChangeSource<S, T = object, P extends keyof T = any> extends SpyChange<T, P> {
-  source: S
+export type Spy<S, T, P extends keyof T, V = T[P], F = unknown> = NestedSpy<S, V, F> & ChangesIterable<T, P, S> & F
+
+export type NestedSpy<S, T = S, F = unknown> = {
+  [P in keyof T]-?: NonNullable<T[P]> extends (...args: infer A) => infer R
+    ? (...args: A) => Spy<S, T, P, R, F>
+    : Spy<S, T, P, T[P], F>
 }
 
-export type NestedSpy<S, T = S, E = unknown> = {
-  [P in keyof T]-?: (T[P] extends (...args: infer A) => infer R
-    ? (...args: A) => NestedSpy<S, R, E>
-    : NestedSpy<S, T[P], E>) &
-    AsyncIterable<SpyChangeSource<S, T, P>> &
-    E
+export function changes<T, P extends keyof T, S = T>(source: Spy<S, T, P>): ChangeIterator<T, P, S> {
+  return source[Symbol.asyncIterator]()
 }
 
-const skiplist = [Symbol.unscopables]
+export const then = Symbol.for('then')
 
-const spied = new MapOfMap<object, PropertyKey, NestedSpy<any, any, any>>()
+const spied = new WeakMapOfMaps<object, PropertyKey, NestedSpy<any, any, any>>()
 
 function spyNestedProxy<T extends object, S extends object, C extends Function>(
-  changes: AsyncStream<SpyChangeSource<S, T, any>>,
-  call?: C
+  changes: AsyncStream<SpyChange<T, any, S>>,
+  run?: C
 ): NestedSpy<S, T, C> {
-  return new Proxy<any>(new Function(), {
-    get(target, property, _proxy) {
-      if (property in skiplist) return target[property]
-      if (property === Symbol.asyncIterator)
-        return () => (call ? call.call(target, changes) : changes)[Symbol.asyncIterator]()
+  //
+  const asyncIterator = () => (run?.(changes) ?? changes)[Symbol.asyncIterator]()
 
-      return spied.get(target, property, () => {
-        const spyProperties = changes.trigger(({ source, value }) =>
-          stream(spyProperty(value, property)).map(result => ({ ...result, source }))
-        )
-        return spyNestedProxy(spyProperties, call)
-      })
+  return new Proxy<any>(function dummyFunction() {}, {
+    get(reference, property) {
+      switch (property) {
+        case 'then':
+          // setTimeout(0) lets other Promises have priority executing
+          return onresolved => setTimeout(onresolved, 0, asyncIterator())
+
+        case Symbol.asyncIterator:
+          return asyncIterator
+
+        case then:
+          property = 'then'
+
+        default:
+          return spied.get(reference, property, () => {
+            let source: S | undefined
+
+            console.log('spied', property)
+
+            let propertyChanges = changes
+              .trigger(({ root, value, ...p }) => {
+                source = root
+                console.log('trigger.', property, { root, value, ...p })
+                return spyProperty(value, property)
+              })
+              .map(change => {
+                console.log('change', change)
+
+                return {
+                  ...change,
+                  root: source || (change.target as S),
+                }
+              })
+
+            return spyNestedProxy(propertyChanges, run)
+          })
+      }
     },
 
-    apply(_target, self, args) {
-      if (call) return call.call(self, changes, ...args)
+    apply(_dummyfn, self, args) {
+      if (run) return run.call(self, changes, ...args)
 
       let results = changes.map(change => ({
         ...change,
-        value: (<Function>change.value).apply(self, args),
+        value: (<Function>change.value).apply(change.target, args),
       }))
-      return spyNestedProxy(results, call)
+      return spyNestedProxy(results, run)
     },
 
     has(_target, _property) {
@@ -55,16 +83,20 @@ function spyNestedProxy<T extends object, S extends object, C extends Function>(
 export function spyNested<S extends object>(object: S): NestedSpy<S>
 export function spyNested<S extends object, T>(
   object: S,
-  call?: (changes: AsyncIterable<SpyChangeSource<S, any, any>>) => T
+  call?: (changes: AsyncIterable<SpyChange<unknown>>, ...args: any[]) => T
 ): NestedSpy<S, S, T>
-export function spyNested(object: any, call?: Function) {
-  return spyNestedProxy(
-    emit<SpyChangeSource<any, any, any>>({
-      source: object,
-      value: object,
-      target: object,
-      property: undefined,
-    }),
-    call
-  )
+
+export function spyNested(object: any, run?: Function) {
+  return spied.get(object, '', () => {
+    const initialSignal = emit<SpyChange<any, any, any>>([
+      {
+        root: isInstance(object) ? object : undefined,
+        value: object,
+        target: object,
+        property: undefined,
+      },
+    ])
+
+    return spyNestedProxy(initialSignal, run)
+  })
 }

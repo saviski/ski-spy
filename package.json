@@ -11,7 +11,10 @@
     "watch": "run-p \"build:* -- --watch\"",
     "clean": "rimraf js .types",
     "build:bundle": "rollup -c",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "test": "mocha",
+    "test:watch": "npm test -- --watch",
+    "coverage": "nyc -r lcov -e .ts -x \"*.test.ts\" npm run test"
   },
   "repository": {
     "type": "git",
@@ -36,13 +39,22 @@
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^9.0.0",
+    "@testdeck/mocha": "^0.1.2",
+    "@types/chai": "^4.2.21",
+    "@types/chai-spies": "^1.0.3",
+    "@types/mocha": "^9.0.0",
+    "chai": "^4.3.4",
+    "chai-spies": "^1.0.0",
+    "mocha": "^9.0.3",
     "npm-run-all": "^4.1.5",
+    "nyc": "^15.1.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.52.1",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.27.3",
+    "ts-node": "^10.1.0",
     "tslib": "^2.3.0",
-    "typescript": "^4.3.4"
+    "typescript": "^4.3.5"
   },
   "files": [
     ".types",
@@ -60,5 +72,10 @@
     "arrowParens": "avoid",
     "endOfLine": "auto",
     "singleQuote": true
+  },
+  "mocha": {
+    "loader": "ts-node/esm",
+    "extension": "ts",
+    "spec": "test/**/*.test.ts"
   }
 }
