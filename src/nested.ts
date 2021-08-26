@@ -1,4 +1,4 @@
-import { WeakMapOfMaps, AsyncStream, stream, emit } from '@ski/streams/streams.js'
+import { WeakMapOfMaps, AsyncStream, stream } from '@ski/streams/streams.js'
 import { SpyChange, ChangesIterable, ChangeIterator } from './change.js'
 import { spyProperty, isInstance } from './property.js'
 
@@ -26,11 +26,12 @@ function spyNestedProxy<T extends object, S extends object, C extends Function>(
   const asyncIterator = () => (run?.(changes) ?? changes)[Symbol.asyncIterator]()
 
   return new Proxy<any>(function dummyFunction() {}, {
-    get(reference, property) {
+    get(_, property) {
       switch (property) {
         case 'then':
           // setTimeout(0) lets other Promises have priority executing
           return onresolved => setTimeout(onresolved, 0, asyncIterator())
+        // return onfullfilled => Promise.resolve(asyncIterator()).then(onfullfilled)
 
         case Symbol.asyncIterator:
           return asyncIterator
@@ -39,20 +40,15 @@ function spyNestedProxy<T extends object, S extends object, C extends Function>(
           property = 'then'
 
         default:
-          return spied.get(reference, property, () => {
+          return spied.get(changes, property, () => {
             let source: S | undefined
 
-            console.log('spied', property)
-
             let propertyChanges = changes
-              .trigger(({ root, value, ...p }) => {
+              .trigger(({ root, value }) => {
                 source = root
-                console.log('trigger.', property, { root, value, ...p })
                 return spyProperty(value, property)
               })
               .map(change => {
-                console.log('change', change)
-
                 return {
                   ...change,
                   root: source || (change.target as S),
@@ -88,7 +84,7 @@ export function spyNested<S extends object, T>(
 
 export function spyNested(object: any, run?: Function) {
   return spied.get(object, '', () => {
-    const initialSignal = emit<SpyChange<any, any, any>>([
+    const initialSignal = stream<SpyChange<any, any, any>>([
       {
         root: isInstance(object) ? object : undefined,
         value: object,

@@ -26,20 +26,13 @@ export function spyProperty<T extends object, K extends keyof T>(
   return asyncGenerator(spied.get(target, property, watch))
 
   async function* asyncGenerator(changes: AsyncEmitter<SpyChange<T, K>>) {
-    if (isInstance(target) && property in target) {
-      console.log('initial yield', {
-        target,
-        property,
-        old: undefined,
-        value: target[property],
-      })
+    if (isInstance(target) && property in target)
       yield {
         target,
         property,
         old: undefined,
         value: target[property],
       }
-    }
 
     yield* changes
   }
@@ -60,6 +53,7 @@ export function spyProperty<T extends object, K extends keyof T>(
 
       set(value: T[K]) {
         let old = this[property]
+
         hasGetSetter ? originalDescriptor.set!.call(this, value) : instanceValues.set(this, value)
         if (value !== old)
           stream.push({

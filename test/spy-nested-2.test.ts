@@ -195,20 +195,22 @@ export class SpyTest2 {
       }
     }
 
+    console.clear()
+
     let changes = spy(MyClass.prototype).deep.property.value
 
     await new Promise(r => setTimeout(r, 10))
 
-    console.log('new')
     let instance1 = new MyClass('instance 1')
     let instance2 = new MyClass('instance 2')
     let instance3 = new MyClass('instance 3')
     let instance4 = new MyClass('instance 4')
 
-    // console.log('set')
-    // instance1.deep.property.value = 1
-    // instance2.deep.property.value = 2
-    // instance3.deep.property.value = 3
+    instance1.deep.property.value = 1
+    instance2.deep.property.value = 2
+    instance3.deep.property.value = 3
+    ;(await changes).return?.()
+    instance4.deep.property.value = 4
 
     for await (let v of changes) console.log('notification', v)
     // expect(change1.value).to.include({
