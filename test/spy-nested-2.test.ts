@@ -6,6 +6,8 @@ import spies from 'chai-spies'
 
 chai.use(spies)
 
+const nextIteration = () => new Promise(resolve => setTimeout(resolve))
+
 interface TestType {
   propertyA: number
   fn(v: number): string
@@ -195,11 +197,8 @@ export class SpyTest2 {
       }
     }
 
-    console.clear()
-
-    let changes = spy(MyClass.prototype).deep.property.value
-
-    await new Promise(r => setTimeout(r, 10))
+    let spyValue = spy(MyClass.prototype).deep.property.value
+    await nextIteration()
 
     let instance1 = new MyClass('instance 1')
     let instance2 = new MyClass('instance 2')
@@ -209,19 +208,43 @@ export class SpyTest2 {
     instance1.deep.property.value = 1
     instance2.deep.property.value = 2
     instance3.deep.property.value = 3
-    ;(await changes).return?.()
+
+    await nextIteration() // changes are reported asyncronously
+    //so only the last modification on a sequencial syncronous loop will be deliveried
+
+    // let changes = await spyValue
+    let changes = spyValue[Symbol.asyncIterator]()
+
+    changes.return!()
+
     instance4.deep.property.value = 4
 
-    for await (let v of changes) console.log('notification', v)
-    // expect(change1.value).to.include({
-    //   source: instance1,
-    //   target: instance1.deep.property,
-    // })
+    let change1 = await changes.next()
+    expect(change1.value).to.include({
+      root: instance1,
+      target: instance1.deep.property,
+      value: 1,
+    })
 
-    // let change2 = await changes.next()
-    // expect(change2.value).to.include({
-    //   source: instance2,
-    //   target: instance2.deep.property,
-    // })
+    let change2 = await changes.next()
+    expect(change2.value).to.include({
+      root: instance2,
+      target: instance2.deep.property,
+      value: 2,
+    })
+
+    let change3 = await changes.next()
+    expect(change3.value).to.include({
+      root: instance3,
+      target: instance3.deep.property,
+      value: 3,
+    })
+
+    let change4 = await changes.next()
+    expect(change4.value).to.include({
+      root: instance4,
+      target: instance4.deep.property,
+      value: 0, // 0 not 4 because whe stopped the spy before setting value = 4
+    })
   }
 }

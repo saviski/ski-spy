@@ -1,4 +1,4 @@
-import { AsyncEmitter, WeakMapOfMaps, stream } from '@ski/streams/streams.js'
+import { AsyncEmitter, WeakMapOfMaps } from '@ski/streams/streams.js'
 import { SpyChange } from './change.js'
 
 const spied = new WeakMapOfMaps<object, PropertyKey, AsyncIterable<SpyChange>>()

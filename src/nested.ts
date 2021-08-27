@@ -1,4 +1,4 @@
-import { WeakMapOfMaps, AsyncStream, stream } from '@ski/streams/streams.js'
+import { WeakMapOfMaps, AsyncStream, stream, delay } from '@ski/streams/streams.js'
 import { SpyChange, ChangesIterable, ChangeIterator } from './change.js'
 import { spyProperty, isInstance } from './property.js'
 
@@ -30,8 +30,10 @@ function spyNestedProxy<T extends object, S extends object, C extends Function>(
       switch (property) {
         case 'then':
           // setTimeout(0) lets other Promises have priority executing
-          return onresolved => setTimeout(onresolved, 0, asyncIterator())
-        // return onfullfilled => Promise.resolve(asyncIterator()).then(onfullfilled)
+          return <PromiseLike<any>['then']>(onfullfilled => delay(asyncIterator()).then(onfullfilled))
+        // return <PromiseLike<any>['then']>(
+        //   (onfullfilled => new Promise(resolve => setTimeout(() => resolve(onfullfilled!(asyncIterator())), 0)))
+        // )
 
         case Symbol.asyncIterator:
           return asyncIterator
